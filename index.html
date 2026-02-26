@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grasp Anywhere — Visibility-Aware Mobile Grasping in Dynamic Environments</title>
+  <link rel="stylesheet" href="static/css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <h1>Visibility-Aware Mobile Grasping<br/>in Dynamic Environments</h1>
+      <p class="authors">
+        <span class="author">Tianrun Hu</span>,
+        <span class="author">Anxing Xiao</span>,
+        <span class="author">David Hsu</span>,
+        <span class="author">Hanbo Zhang</span>
+      </p>
+      <div class="hero-links">
+        <a href="#" class="btn disabled"><i class="fas fa-file-pdf"></i> Paper (TBD)</a>
+        <a href="#" class="btn disabled"><i class="fab fa-github"></i> Code (TBD)</a>
+        <a href="#video" class="btn"><i class="fas fa-video"></i> Video</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Teaser Figure -->
+  <section class="teaser">
+    <div class="container">
+      <figure>
+        <img src="static/images/trajectory_figure.png" alt="Teaser: A mobile manipulator navigating around dynamic obstacles to grasp a target object." />
+        <figcaption>
+          A Fetch mobile manipulator must jointly reason about <strong>where to look</strong> and <strong>how to move</strong> its whole body to safely grasp objects in dynamic, unknown environments with limited field-of-view.
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- Abstract -->
+  <section class="section" id="abstract">
+    <div class="container">
+      <h2>Abstract</h2>
+      <p>
+        This paper addresses the problem of mobile grasping in dynamic, unknown environments where a robot must operate under a limited field-of-view. The fundamental challenge is the inherent trade-off between <em>"seeing"</em> around to reduce environmental uncertainty and <em>"moving"</em> the body to achieve task progress in a high-dimensional configuration space, subject to visibility constraints.
+      </p>
+      <p>
+        We propose a unified mobile grasping system comprising two core components:
+        <strong>(1)</strong> an iterative low-level whole-body planner coupled with velocity-aware active perception to navigate dynamic environments safely; and
+        <strong>(2)</strong> a hierarchical high-level planner based on behavior trees that adaptively generates subgoals to guide the robot through exploration and runtime failures.
+      </p>
+      <p>
+        We provide experimental results across 400 dynamic simulation scenarios and real-world deployment on a Fetch mobile manipulator. The results show that in both static unknown environments and dynamic environments with suddenly appearing obstacles, our system achieves success rates of <strong>68.75%</strong> and <strong>58.0%</strong>, respectively, significantly outperforming baselines in both robustness and safety.
+      </p>
+    </div>
+  </section>
+
+  <!-- Video (Placeholder) -->
+  <section class="section alt-bg" id="video">
+    <div class="container">
+      <h2>Video</h2>
+      <video class="project-video" controls preload="metadata">
+        <source src="static/images/supplementary_video.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+    </div>
+  </section>
+
+  <!-- Method Overview -->
+  <section class="section" id="method">
+    <div class="container">
+      <h2>Method Overview</h2>
+      <figure class="full-width-figure">
+        <img src="static/images/system_architecture.png" alt="System architecture diagram" />
+        <figcaption>
+          System architecture. Our receding-horizon framework tightly couples perception and planning, jointly optimizing observation and whole-body motion at runtime.
+        </figcaption>
+      </figure>
+
+      <div class="method-grid">
+        <div class="method-card">
+          <div class="method-icon"><i class="fas fa-eye"></i></div>
+          <h3>Velocity-Aware Active Gaze</h3>
+          <p>
+            A state-dependent gaze policy &pi;<sub>v</sub> that switches between observing the target during planning and monitoring the swept volume during execution. Prioritizes collision-critical regions based on velocity and temporal proximity.
+          </p>
+        </div>
+        <div class="method-card">
+          <div class="method-icon"><i class="fas fa-sitemap"></i></div>
+          <h3>Hierarchical Subgoal Generation</h3>
+          <p>
+            An adaptive behavior-tree policy &pi;<sub>g</sub> with three progressive strategies: direct grasping, pre-grasp repositioning, and observation gathering &mdash; enabling runtime recovery from failures.
+          </p>
+        </div>
+        <div class="method-card">
+          <div class="method-icon"><i class="fas fa-route"></i></div>
+          <h3>Fast Whole-Body Planning</h3>
+          <p>
+            A novel vmRRT-C (Vectorized Mobile RRT-Connect) planner achieving <strong>50&ndash;80 ms</strong> planning times for real-time replanning across the 11-DoF heterogeneous configuration space.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Execution Sequence -->
+  <section class="section alt-bg" id="execution">
+    <div class="container">
+      <h2>Execution Example</h2>
+      <figure class="full-width-figure">
+        <img src="static/images/execution_seq.png" alt="Full execution sequence showing third-person view, first-person view, and belief map." />
+        <figcaption>
+          Full execution sequence. <strong>Top:</strong> third-person view. <strong>Middle:</strong> onboard camera (first-person). <strong>Bottom:</strong> occupancy belief map. The robot actively explores, repositions, and grasps the target while avoiding dynamic obstacles.
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- Results -->
+  <section class="section" id="results">
+    <div class="container">
+      <h2>Results</h2>
+
+      <!-- Key Numbers -->
+      <div class="results-highlights">
+        <div class="stat-card">
+          <span class="stat-number">68.75%</span>
+          <span class="stat-label">Success &mdash; Unknown Static</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number">58.0%</span>
+          <span class="stat-label">Success &mdash; Dynamic</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number">400</span>
+          <span class="stat-label">Simulation Scenarios</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number">50&ndash;80ms</span>
+          <span class="stat-label">Planning Time</span>
+        </div>
+      </div>
+
+      <!-- Simulation -->
+      <div class="results-row">
+        <div class="results-col">
+          <h3>Simulation Evaluation</h3>
+          <figure>
+            <img src="static/images/success_rates.png" alt="Success rate comparison across methods" />
+            <figcaption>Success rate comparison against baselines across 400 scenarios in 20 ReplicaCAD scenes.</figcaption>
+          </figure>
+        </div>
+        <div class="results-col">
+          <h3>Failure Analysis</h3>
+          <figure>
+            <img src="static/images/unknown_env.png" alt="Failure flow in unknown static environments" />
+            <figcaption>Failure decomposition in unknown static environments.</figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <!-- Real-World -->
+      <h3 class="subsection-title">Real-World Deployment</h3>
+      <div class="results-row">
+        <div class="results-col">
+          <figure>
+            <img src="static/images/real_static_env.png" alt="Real robot in static environments" />
+            <figcaption>Static environment: 65% success across 5 indoor locations.</figcaption>
+          </figure>
+        </div>
+        <div class="results-col">
+          <figure>
+            <img src="static/images/real_dynamic_env.png" alt="Real robot with dynamic obstacles" />
+            <figcaption>Dynamic environment with moving pedestrians: 55% success.</figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <!-- Failure Distribution -->
+      <h3 class="subsection-title">Spatial Failure Distribution</h3>
+      <figure class="full-width-figure">
+        <img src="static/images/success_distribution.png" alt="Spatial distribution of successes and failures across scenes" />
+        <figcaption>Spatial distribution of successes and failures. Failures cluster in deep table areas (reachability limits), wall-adjacent regions (constrained approach angles), and cluttered zones (precision requirements).</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- Diverse Demonstrations -->
+  <section class="section alt-bg" id="environments">
+    <div class="container">
+      <h2>Evaluation Environments</h2>
+      <figure class="full-width-figure">
+        <img src="static/images/diverse_demonstrations.png" alt="Diverse evaluation environments in simulation and real world" />
+        <figcaption>
+          Our system is evaluated across diverse environments in both simulation (ReplicaCAD scenes) and real-world indoor locations.
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- Qualitative Results -->
+  <section class="section" id="qualitative">
+    <div class="container">
+      <h2>Qualitative Results</h2>
+      <div class="qual-grid">
+        <figure>
+          <img src="static/images/qualitative_init.jpg" alt="Initial configuration" />
+          <figcaption>Initial Configuration</figcaption>
+        </figure>
+        <figure>
+          <img src="static/images/qualitative_observation.jpg" alt="Active observation" />
+          <figcaption>Active Observation</figcaption>
+        </figure>
+        <figure>
+          <img src="static/images/qualitative_prepose.jpg" alt="Pre-grasp repositioning" />
+          <figcaption>Pre-Grasp Repositioning</figcaption>
+        </figure>
+        <figure>
+          <img src="static/images/qualitative_grasping.jpg" alt="Grasping pose" />
+          <figcaption>Grasping</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- BibTeX -->
+  <section class="section alt-bg" id="bibtex">
+    <div class="container">
+      <h2>BibTeX</h2>
+      <pre class="bibtex"><code>@inproceedings{hu2025visibility,
+  title     = {Visibility-Aware Mobile Grasping in Dynamic Environments},
+  author    = {Hu, Tianrun and Xiao, Anxing and Hsu, David and Zhang, Hanbo},
+  booktitle = {arXiv preprint},
+  year      = {2025}
+}</code></pre>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p>
+        Website template inspired by <a href="https://nerfies.github.io" target="_blank">Nerfies</a>.
+        Licensed under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank">CC BY-SA 4.0</a>.
+      </p>
+    </div>
+  </footer>
+
+</body>
+</html>
