@@ -26,7 +26,11 @@
         <a href="https://arxiv.org/abs/2605.02487" class="btn" target="_blank" rel="noopener"><i class="fas fa-archive"></i> arXiv</a>
         <a href="https://github.com/AdaCompNUS/Visibility-Awared-Mobile-Grasping" class="btn" target="_blank" rel="noopener"><i class="fab fa-github"></i> Code</a>
         <a href="#video" class="btn"><i class="fas fa-video"></i> Video</a>
+        <a href="#demo" class="btn btn-primary"><i class="fas fa-robot"></i> Interactive Demo</a>
       </div>
+      <p class="hero-note">
+        <i class="fas fa-lock" aria-hidden="true"></i>The interactive demo drives a real robot through RoboMesh. A RoboMesh account is required.
+      </p>
     </div>
   </section>
 
@@ -39,6 +43,71 @@
           A Fetch mobile manipulator must jointly reason about <strong>where to look</strong> and <strong>how to move</strong> its whole body to safely grasp objects in dynamic, unknown environments with limited field-of-view.
         </figcaption>
       </figure>
+    </div>
+  </section>
+
+  <!-- Live Demo (RoboMesh) -->
+  <section class="demo-band" id="demo">
+    <div class="container">
+      <div class="demo-card">
+
+        <div class="demo-main">
+          <span class="demo-eyebrow">Interactive Demo</span>
+          <h2 class="demo-title">Try it yourself, on a real robot.</h2>
+          <p class="demo-sub">
+            Our system runs as an interactive demo on <strong>RoboMesh</strong>, the remote-robot platform of the
+            <strong>Smart Systems Institute (SSI)</strong> at NUS. RoboMesh hosts demos from many groups; ours is
+            the room <strong>&ldquo;Visibility Awared Mobile Grasping&rdquo;</strong>, from the
+            <strong>AdaComp Lab</strong>. Say something as simple as &ldquo;grasp this&rdquo;, point at the object
+            you mean, and the robot goes and grasps it on its own. Nothing to install.
+          </p>
+
+          <div class="demo-example">
+            <p class="demo-example-line">
+              <span class="demo-example-mark" aria-hidden="true">&gt;</span>
+              <span>grasp this</span>
+            </p>
+            <p class="demo-example-line">
+              <i class="fas fa-crosshairs demo-example-mark" aria-hidden="true"></i>
+              <span>+ point at the object</span>
+            </p>
+          </div>
+          <p class="demo-example-caption">That is the whole instruction. The point says which object; the words say what to do.</p>
+
+          <ol class="demo-steps">
+            <li>
+              <span class="demo-step-num" aria-hidden="true">1</span>
+              <span>Sign in to RoboMesh and open our room, <strong>Visibility Awared Mobile Grasping</strong>.</span>
+            </li>
+            <li>
+              <span class="demo-step-num" aria-hidden="true">2</span>
+              <span>Say or type what you want, even just &ldquo;grasp this&rdquo;, and point at the object. Language and a point together leave no ambiguity about what you mean.</span>
+            </li>
+            <li>
+              <span class="demo-step-num" aria-hidden="true">3</span>
+              <span>The robot decides where to look and how to move its whole body, online and together. It works around whatever is in the way and grasps, recovering on its own when an attempt fails.</span>
+            </li>
+          </ol>
+        </div>
+
+        <div class="demo-aside">
+          <div class="demo-room">
+            <span class="demo-room-label"><i class="fas fa-door-open" aria-hidden="true"></i> Our room on RoboMesh</span>
+            <span class="demo-room-name">Visibility Awared Mobile Grasping</span>
+            <span class="demo-room-owner">AdaComp Lab &middot; SSI, NUS</span>
+          </div>
+          <a class="btn btn-primary demo-cta" href="https://robomesh.ssilabs.org/webapp" target="_blank" rel="noopener">
+            Open the interactive demo
+            <i class="fas fa-arrow-right demo-cta-arrow" aria-hidden="true"></i>
+          </a>
+          <p class="demo-access">
+            <i class="fas fa-lock" aria-hidden="true"></i>
+            <span>A RoboMesh account is required. RoboMesh hosts many groups&rsquo; demos, so after signing in, open the room above to reach ours.</span>
+          </p>
+          <span class="demo-url"><i class="fas fa-link" aria-hidden="true"></i> robomesh.ssilabs.org/webapp</span>
+        </div>
+
+      </div>
     </div>
   </section>
 
