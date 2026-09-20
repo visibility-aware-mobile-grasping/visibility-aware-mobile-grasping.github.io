@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Grasp Anywhere — Visibility-Aware Mobile Grasping in Dynamic Environments</title>
+  <title>Visibility-Aware Mobile Grasping in Dynamic Environments</title>
+  <meta name="description" content="A unified mobile grasping system that enforces collision and object visibility constraints at runtime through velocity-aware active perception, hierarchical subgoal generation, and real-time whole-body replanning." />
   <link rel="stylesheet" href="static/css/style.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -16,11 +17,17 @@
     <div class="container">
       <h1>Visibility-Aware Mobile Grasping<br/>in Dynamic Environments</h1>
       <p class="authors">
-        <span class="author">Tianrun Hu</span>,
-        <span class="author">Anxing Xiao</span>,
-        <span class="author">David Hsu</span>,
-        <span class="author">Hanbo Zhang</span>
+        <span class="author">Tianrun Hu<sup>1,2</sup></span>,
+        <span class="author">Anxing Xiao<sup>1,2</sup></span>,
+        <span class="author">David Hsu<sup>1,2</sup></span>,
+        <span class="author">Hanbo Zhang<sup>3,&#42;</sup></span>
       </p>
+      <p class="affiliations">
+        <span class="affiliation"><sup>1</sup>School of Computing, National University of Singapore</span>
+        <span class="affiliation"><sup>2</sup>Smart Systems Institute, National University of Singapore</span>
+        <span class="affiliation"><sup>3</sup>Shanghai Innovation Institute, Shanghai, China</span>
+      </p>
+      <p class="affiliation-note"><sup>&#42;</sup>Corresponding author</p>
       <div class="hero-links">
         <a href="https://arxiv.org/abs/2605.02487" class="btn" target="_blank" rel="noopener"><i class="fas fa-file-pdf"></i> Paper</a>
         <a href="https://arxiv.org/abs/2605.02487" class="btn" target="_blank" rel="noopener"><i class="fas fa-archive"></i> arXiv</a>
@@ -38,9 +45,13 @@
   <section class="teaser">
     <div class="container">
       <figure>
-        <img src="static/images/trajectory_figure.png" alt="Teaser: A mobile manipulator navigating around dynamic obstacles to grasp a target object." />
+        <img src="static/images/real_world_teaser.jpg" alt="Three real-world sequences: a Fetch robot reacting to a moving person before grasping an apple, navigating around a person and a chair to reach a bottle on a dining table, and threading through tightly spaced chairs to reach an apple on a workstation." />
         <figcaption>
-          A Fetch mobile manipulator must jointly reason about <strong>where to look</strong> and <strong>how to move</strong> its whole body to safely grasp objects in dynamic, unknown environments with limited field-of-view.
+          <strong>Visibility-aware mobile grasping in the real world.</strong>
+          <strong>(a)</strong> A moving person enters the robot&rsquo;s route, and the robot reacts before grasping the apple.
+          <strong>(b)</strong> The robot navigates around a person and a chair to reach a bottle on a dining table.
+          <strong>(c)</strong> The robot navigates through tightly spaced chairs before reaching an apple on the workstation.
+          Faces are blurred for privacy.
         </figcaption>
       </figure>
     </div>
@@ -116,184 +127,417 @@
     <div class="container">
       <h2>Abstract</h2>
       <p>
-        This paper addresses the problem of mobile grasping in dynamic, unknown environments where a robot must operate under a limited field-of-view. The fundamental challenge is the inherent trade-off between <em>"seeing"</em> around to reduce environmental uncertainty and <em>"moving"</em> the body to achieve task progress in a high-dimensional configuration space, subject to visibility constraints.
+        We consider mobile grasping in unknown and dynamic environments, where a robot must approach and grasp a target object using a camera with a limited field of view. This setting introduces two visibility constraints. Incomplete environmental observations can create collision risks along the whole-body trajectory, while occlusions can hinder object pose refinement during grasping.
       </p>
       <p>
-        We propose a unified mobile grasping system comprising two core components:
-        <strong>(1)</strong> an iterative low-level whole-body planner coupled with velocity-aware active perception to navigate dynamic environments safely; and
-        <strong>(2)</strong> a hierarchical high-level planner based on behavior trees that adaptively generates subgoals to guide the robot through exploration and runtime failures.
+        Previous systems often assume known or static environments and decouple perception from motion, leaving safety unresolved around unobserved obstacles. We present a unified system that enforces both visibility constraints at runtime through three core components. A <strong>velocity-aware gaze policy</strong> directs perception toward fast-moving regions of the planned swept volume, a <strong>hierarchical subgoal policy</strong> samples grasp and intermediate configurations that maintain target visibility, and a <strong>real-time whole-body planner</strong> replans over a receding horizon as the map updates.
       </p>
       <p>
-        We provide experimental results across 400 dynamic simulation scenarios and real-world deployment on a Fetch mobile manipulator. The results show that in both static unknown environments and dynamic environments with suddenly appearing obstacles, our system achieves success rates of <strong>68.75%</strong> and <strong>58.0%</strong>, respectively, significantly outperforming baselines in both robustness and safety.
+        Across 400 randomized simulation scenarios and real-world trials on a Fetch mobile manipulator, our system achieves success rates of <strong>70.4%</strong> in unknown static environments and <strong>57.9%</strong> in dynamic environments, outperforming the decoupled navigation-and-manipulation strategy by <strong>16.3</strong> and <strong>9.3</strong> percentage points, respectively, while significantly reducing collisions.
       </p>
     </div>
   </section>
 
-  <!-- Video (Placeholder) -->
+  <!-- Video -->
   <section class="section alt-bg" id="video">
     <div class="container">
       <h2>Video</h2>
-      <video class="project-video" controls preload="metadata">
+      <video class="project-video" controls preload="metadata" poster="static/images/video_poster.jpg">
         <source src="static/images/supplementary_video.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
+      <p class="video-caption">
+        Supplementary video (3:04): the two visibility constraints, the velocity-aware gaze policy and the subgoal
+        hierarchy, simulation and real-robot rollouts &mdash; including a person stepping into the route and a
+        blocked manipulation attempt that re-samples its pre-grasp &mdash; closing with the quantitative results.
+      </p>
+    </div>
+  </section>
+
+  <!-- The Problem: two visibility constraints -->
+  <section class="section" id="problem">
+    <div class="container">
+      <h2>Two Visibility Constraints</h2>
+      <p class="section-lead">
+        Mobile grasping already couples collision avoidance, kinematics, and grasping &mdash; constraints existing
+        systems handle under a known map. A limited field of view in an unknown environment adds two more, and with a
+        single camera they compete for the same gaze.
+      </p>
+
+      <div class="constraint-grid">
+        <div class="constraint-card constraint-col">
+          <span class="constraint-tag">&phi;<sub>colvis</sub></span>
+          <h3>Collision visibility</h3>
+          <p>
+            The map must cover the whole-body <strong>swept volume</strong> before the robot enters it. Otherwise a
+            trajectory that is collision-free <em>in the map</em> can still hit an obstacle that was never observed.
+            This matters most <strong>during execution</strong>.
+          </p>
+        </div>
+        <div class="constraint-card constraint-obj">
+          <span class="constraint-tag">&phi;<sub>objvis</sub></span>
+          <h3>Object visibility</h3>
+          <p>
+            The grasp configuration must admit a head orientation that keeps the <strong>target in view</strong> for
+            continued pose refinement, respecting camera limits, self-occlusion, and mapped occlusion. This matters
+            most <strong>during planning</strong>.
+          </p>
+        </div>
+      </div>
+
+      <figure class="full-width-figure constraint-figure">
+        <img src="static/images/constraint_graph.png" alt="Constraint graph relating the maintained map, current configuration, whole-body trajectory, goal configuration, grasp pose, and target object through collision, motion, IK, grasp, collision-visibility, and object-visibility constraints." />
+        <figcaption>
+          We formulate the problem as sampling over this constraint graph. The two visibility constraints
+          (orange and blue) are what a limited field of view adds on top of the standard collision, motion, IK, and
+          grasp constraints.
+        </figcaption>
+      </figure>
     </div>
   </section>
 
   <!-- Method Overview -->
-  <section class="section" id="method">
+  <section class="section alt-bg" id="method">
     <div class="container">
-      <h2>Method Overview</h2>
+      <h2>System Overview</h2>
+      <p class="section-lead">
+        A receding-horizon loop updates the belief summary <em>b<sub>t</sub></em> = (<em>q<sub>t</sub></em>,
+        <em>M<sub>t</sub></em>, <em>g<sub>t</sub></em>) through four coupled components. New observations can
+        invalidate both trajectories and goals, triggering replanning or goal resampling.
+      </p>
       <figure class="full-width-figure">
-        <img src="static/images/system_architecture.png" alt="System architecture diagram" />
+        <img src="static/images/system_architecture.png" alt="System architecture: subgoal generation escalating from grasping pose to pre-pose to observation pose, feeding a vectorized motion planner, an MPC whole-body tracking controller, and an active perception and map update loop." />
         <figcaption>
-          System architecture. Our receding-horizon framework tightly couples perception and planning, jointly optimizing observation and whole-body motion at runtime.
+          <strong>System architecture.</strong> The active perception policy directs gaze while updating the map
+          <em>M<sub>t</sub></em>, the hierarchical subgoal policy generates goals <em>g<sub>t</sub></em>, the
+          whole-body motion policy computes collision-free trajectories <em>&xi;<sub>t</sub></em> to
+          <em>g<sub>t</sub></em>, and localization and control executes the trajectory while tracking state
+          <em>q<sub>t</sub></em>.
         </figcaption>
       </figure>
 
       <div class="method-grid">
         <div class="method-card">
           <div class="method-icon"><i class="fas fa-eye"></i></div>
-          <h3>Velocity-Aware Active Gaze</h3>
+          <h3>Velocity-Aware Active Perception&nbsp;&pi;<sub>v</sub></h3>
           <p>
-            A state-dependent gaze policy &pi;<sub>v</sub> that switches between observing the target during planning and monitoring the swept volume during execution. Prioritizes collision-critical regions based on velocity and temporal proximity.
+            Gaze maximizes visibility of an importance field that adapts to the robot's phase. With no trajectory
+            running, it observes the target for grasp generation. Once a trajectory is executing, it shifts to the
+            swept volume, weighted by <strong>velocity and time-discounted lookahead</strong> so collision-critical
+            regions are refreshed first.
           </p>
         </div>
         <div class="method-card">
           <div class="method-icon"><i class="fas fa-sitemap"></i></div>
-          <h3>Hierarchical Subgoal Generation</h3>
+          <h3>Hierarchical Subgoal Policy&nbsp;&pi;<sub>g</sub></h3>
           <p>
-            An adaptive behavior-tree policy &pi;<sub>g</sub> with three progressive strategies: direct grasping, pre-grasp repositioning, and observation gathering &mdash; enabling runtime recovery from failures.
+            A behavior tree with three fallback levels &mdash; <strong>grasp</strong>, <strong>pre-grasp</strong>, and
+            <strong>observe</strong>. It tries the most direct level first and escalates when one fails, which is also
+            how the system recovers at runtime. Pre-grasp sampling factors over base pose, torso height, and
+            end-effector pose, then rejects candidates that fail IK, collision, or self-occlusion.
           </p>
         </div>
         <div class="method-card">
           <div class="method-icon"><i class="fas fa-route"></i></div>
-          <h3>Fast Whole-Body Planning</h3>
+          <h3>Whole-Body Motion Policy&nbsp;&pi;<sub>r</sub></h3>
           <p>
-            A novel vmRRT-C (Vectorized Mobile RRT-Connect) planner achieving <strong>50&ndash;80 ms</strong> planning times for real-time replanning across the 11-DoF heterogeneous configuration space.
+            Hierarchical sampling with a non-holonomic kernel (Hybrid A* guidance, Reeds-Shepp local connections) for
+            the base and RRT-Connect for the arm, synchronized and validated with <strong>SIMD collision
+            checking</strong>. Planning runs in <strong>50&ndash;80&nbsp;ms</strong>; a 20&nbsp;Hz whole-body
+            velocity tracker accepts trajectory updates mid-execution.
           </p>
         </div>
       </div>
+
+      <figure class="full-width-figure gaze-figure">
+        <img src="static/images/gaze_heatmap.jpg" alt="Heatmap of the gaze importance field over the robot's swept volume, with warmer colours on fast-moving and imminent regions and a bright spot on the target object." />
+        <figcaption>
+          <strong>State-dependent gaze optimization.</strong> During planning the importance field concentrates on
+          the target region. During execution it shifts to the swept volume <em>V</em>(<em>&xi;<sub>t</sub></em>)
+          (colour-coded), weighted by velocity and temporal proximity to prioritize collision-critical regions.
+        </figcaption>
+      </figure>
     </div>
   </section>
 
   <!-- Execution Sequence -->
-  <section class="section alt-bg" id="execution">
+  <section class="section" id="execution">
     <div class="container">
       <h2>Execution Example</h2>
       <figure class="full-width-figure">
-        <img src="static/images/execution_seq.png" alt="Full execution sequence showing third-person view, first-person view, and belief map." />
+        <img src="static/images/execution_seq.jpg" alt="Four-stage execution sequence in simulation: starting pose, observation stage, pre-grasp stage, and grasping stage, each with the head camera view inset above and the belief map below." />
         <figcaption>
-          Full execution sequence. <strong>Top:</strong> third-person view. <strong>Middle:</strong> onboard camera (first-person). <strong>Bottom:</strong> occupancy belief map. The robot actively explores, repositions, and grasps the target while avoiding dynamic obstacles.
+          Left to right: starting pose, observation stage, pre-grasp stage, grasping stage. <strong>Top:</strong> the
+          scene, with the head camera view inset. <strong>Bottom:</strong> the robot's belief map. The sampled
+          pre-grasp pose avoids self-occlusion and keeps the target visible for the final grasp &mdash; the object
+          visibility constraint in action.
         </figcaption>
       </figure>
     </div>
   </section>
 
   <!-- Results -->
-  <section class="section" id="results">
+  <section class="section alt-bg" id="results">
     <div class="container">
       <h2>Results</h2>
 
       <!-- Key Numbers -->
       <div class="results-highlights">
         <div class="stat-card">
-          <span class="stat-number">68.75%</span>
-          <span class="stat-label">Success &mdash; Unknown Static</span>
+          <span class="stat-number">70.4%</span>
+          <span class="stat-label">Success &mdash; unknown static</span>
+          <span class="stat-delta">+16.3 pp over nav.-and-manip.</span>
         </div>
         <div class="stat-card">
-          <span class="stat-number">58.0%</span>
-          <span class="stat-label">Success &mdash; Dynamic</span>
+          <span class="stat-number">57.9%</span>
+          <span class="stat-label">Success &mdash; dynamic</span>
+          <span class="stat-delta">+9.3 pp over nav.-and-manip.</span>
         </div>
         <div class="stat-card">
           <span class="stat-number">400</span>
-          <span class="stat-label">Simulation Scenarios</span>
+          <span class="stat-label">Randomized scenarios</span>
+          <span class="stat-delta">20 ReplicaCAD scenes &times; 20 objects</span>
         </div>
         <div class="stat-card">
-          <span class="stat-number">50&ndash;80ms</span>
-          <span class="stat-label">Planning Time</span>
+          <span class="stat-number">~100 ms</span>
+          <span class="stat-label">Control cycle</span>
+          <span class="stat-delta">~150 ms when replanning</span>
         </div>
       </div>
 
-      <!-- Simulation -->
+      <!-- Comparison table -->
+      <h3 class="subsection-title">Comparison with Baselines and Ablations</h3>
+      <div class="table-wrap">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th rowspan="2" class="col-method">Method</th>
+              <th colspan="2">Unknown static</th>
+              <th colspan="2">Unknown dynamic</th>
+            </tr>
+            <tr>
+              <th>Success &uarr;</th>
+              <th>Collision &darr;</th>
+              <th>Success &uarr;</th>
+              <th>Collision &darr;</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="row-group"><td colspan="5">Learning-based policies</td></tr>
+            <tr>
+              <td class="col-method">SG-VLA (Easy)</td>
+              <td>1.6<span class="ci">&plusmn;1.2</span></td><td>78.8<span class="ci">&plusmn;1.9</span></td>
+              <td>1.2<span class="ci">&plusmn;0.8</span></td><td>80.5<span class="ci">&plusmn;2.1</span></td>
+            </tr>
+            <tr>
+              <td class="col-method">RL (MS-HAB, Easy)</td>
+              <td>26.9<span class="ci">&plusmn;2.7</span></td><td>42.7<span class="ci">&plusmn;3.1</span></td>
+              <td>24.1<span class="ci">&plusmn;3.0</span></td><td>44.9<span class="ci">&plusmn;2.4</span></td>
+            </tr>
+            <tr class="row-group"><td colspan="5">Conventional mobile manipulation designs</td></tr>
+            <tr>
+              <td class="col-method">Direct Grasping</td>
+              <td>27.2<span class="ci">&plusmn;2.5</span></td><td>2.5<span class="ci">&plusmn;0.8</span></td>
+              <td>16.1<span class="ci">&plusmn;1.1</span></td><td>14.8<span class="ci">&plusmn;1.9</span></td>
+            </tr>
+            <tr>
+              <td class="col-method">CapMap Placement</td>
+              <td>53.0<span class="ci">&plusmn;2.4</span></td><td>9.7<span class="ci">&plusmn;1.0</span></td>
+              <td>49.7<span class="ci">&plusmn;0.9</span></td><td>8.2<span class="ci">&plusmn;0.8</span></td>
+            </tr>
+            <tr>
+              <td class="col-method">Navigation-and-manipulation</td>
+              <td>54.0<span class="ci">&plusmn;2.4</span></td><td>7.7<span class="ci">&plusmn;1.1</span></td>
+              <td>48.6<span class="ci">&plusmn;3.4</span></td><td>7.5<span class="ci">&plusmn;1.7</span></td>
+            </tr>
+            <tr class="row-group"><td colspan="5">Ablations</td></tr>
+            <tr>
+              <td class="col-method">Ours w/o velocity weighting</td>
+              <td>62.2<span class="ci">&plusmn;1.8</span></td><td>12.3<span class="ci">&plusmn;2.3</span></td>
+              <td>51.5<span class="ci">&plusmn;1.6</span></td><td>18.1<span class="ci">&plusmn;2.4</span></td>
+            </tr>
+            <tr>
+              <td class="col-method">Ours w/o observation stage</td>
+              <td>68.3<span class="ci">&plusmn;3.7</span></td><td>5.8<span class="ci">&plusmn;2.4</span></td>
+              <td>56.3<span class="ci">&plusmn;3.4</span></td><td>13.2<span class="ci">&plusmn;4.4</span></td>
+            </tr>
+            <tr class="row-ours">
+              <td class="col-method">Ours (full system)</td>
+              <td><strong>70.3</strong><span class="ci">&plusmn;1.1</span></td><td><strong>5.0</strong><span class="ci">&plusmn;1.5</span></td>
+              <td><strong>57.9</strong><span class="ci">&plusmn;1.5</span></td><td>13.9<span class="ci">&plusmn;3.4</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="table-note">
+        Percentages, mean &plusmn; 95% confidence-interval half-width over five runs. The paper reports the full
+        breakdown, including grasp, IK, reachability, perception, and planning failures, and the Hard evaluation
+        protocol for the learning baselines. Headline figures above are quoted from the paper&rsquo;s abstract
+        (70.4%); the table reproduces its Table I (70.3%).
+      </p>
+
+      <div class="finding-grid">
+        <div class="finding-card">
+          <h4>Decoupling costs the most where the map is worst</h4>
+          <p>
+            Navigation-and-manipulation commits to a base placement before the robot can observe the target's
+            surroundings. That frequently produced unreachable configurations, <strong>doubled planning
+            failures</strong>, and collided more often once fixed-base arm planning had to work in constrained space.
+          </p>
+        </div>
+        <div class="finding-card">
+          <h4>The behavior tree carries the system</h4>
+          <p>
+            Removing the subgoal policy entirely (Direct Grasping) is the single largest drop &mdash;
+            <strong>43.2 and 41.8 points</strong>. Without fallbacks to repositioning or observation gathering,
+            planning failures grew by <strong>3.3&ndash;5.3&times;</strong>.
+          </p>
+        </div>
+        <div class="finding-card">
+          <h4>Velocity weighting buys safety, not reach</h4>
+          <p>
+            Removing it <strong>more than doubled collisions</strong> in static environments and raised them by a
+            third in dynamic ones, while other failure categories barely moved. Velocity-aware perception improves
+            success almost entirely by avoiding collisions &mdash; for 26 ms per cycle.
+          </p>
+        </div>
+        <div class="finding-card">
+          <h4>The observation stage shows up in path length</h4>
+          <p>
+            Its effect on success (2.1 and 1.6 points) is not statistically resolvable over five runs. Path
+            efficiency separates the designs more clearly: <strong>62.2% and 48.0% SPL</strong> for the full system
+            against 54.7% and 45.8% for the ablation.
+          </p>
+        </div>
+        <div class="finding-card">
+          <h4>Learned policies do not seek out what matters</h4>
+          <p>
+            Even with the oracle Easy initialization, both learning baselines stayed low and SG-VLA near zero, with
+            failures dominated by collisions. Neither showed signs of looking at the space it was about to enter.
+            Visibility has to be an <strong>explicit objective</strong>.
+          </p>
+        </div>
+        <div class="finding-card">
+          <h4>Grasp detection is the bottleneck</h4>
+          <p>
+            Among 46 labeled grasp failures, <strong>43.5% were geometrically sound but kinematically
+            infeasible</strong>, 30.4% misaligned, 23.9% slipped on lift. The detector ranks by geometry alone while
+            reachability depends on base placement &mdash; a clear case for kinematically informed grasp scoring.
+          </p>
+        </div>
+      </div>
+
+      <!-- Failure flow -->
+      <h3 class="subsection-title">Where Trials Fail</h3>
       <div class="results-row">
         <div class="results-col">
-          <h3>Simulation Evaluation</h3>
           <figure>
-            <img src="static/images/success_rates.png" alt="Success rate comparison across methods" />
-            <figcaption>Success rate comparison against baselines across 400 scenarios in 20 ReplicaCAD scenes.</figcaption>
+            <img src="static/images/unknown_env.png" alt="Sankey failure flow for unknown static simulation: 400 trials, 356 arrive at pre-pose, 332 observation success, 286 success." />
+            <figcaption>Simulation &mdash; unknown static.</figcaption>
           </figure>
         </div>
         <div class="results-col">
-          <h3>Failure Analysis</h3>
           <figure>
-            <img src="static/images/unknown_env.png" alt="Failure flow in unknown static environments" />
-            <figcaption>Failure decomposition in unknown static environments.</figcaption>
+            <img src="static/images/dynamic_env.png" alt="Sankey failure flow for dynamic simulation environments." />
+            <figcaption>Simulation &mdash; dynamic.</figcaption>
           </figure>
         </div>
       </div>
+      <p class="figure-note">
+        Failure flow on our benchmark. Execution failures (collision, grasp, IK), system limitations (reachability,
+        perception), and planning failures are tracked separately at each stage.
+      </p>
+
+      <h3 class="subsection-title">Spatial Failure Distribution</h3>
+      <figure class="full-width-figure">
+        <img src="static/images/success_distribution.jpg" alt="Top-down view of a scene with green circles marking successful grasps and red circles marking failures, clustered around tables, counters, and cluttered surfaces." />
+        <figcaption>
+          Green and red circles mark successful and failed grasp attempts. Failures concentrate on objects deep on
+          tables, near walls, and in clutter &mdash; where feasible approach directions are scarce. Per-scene success
+          ranged 58&ndash;82% (static) and 41&ndash;67% (dynamic), with cross-scene standard deviations of 6.9% and
+          7.5%.
+        </figcaption>
+      </figure>
 
       <!-- Real-World -->
       <h3 class="subsection-title">Real-World Deployment</h3>
+      <p class="section-lead">
+        We deployed only the full system on the real robot, since baselines without active perception and reactive
+        replanning risk damaging the robot and the environment. Across five indoor locations &mdash; dining table,
+        kitchen counter, workstation, coffee table, sofa &mdash; it reached success rates comparable to simulation:
+        <strong>65.0% static</strong> (vs. 70.4%) and <strong>55.0% dynamic</strong> (vs. 57.9%).
+      </p>
       <div class="results-row">
         <div class="results-col">
           <figure>
-            <img src="static/images/real_static_env.png" alt="Real robot in static environments" />
-            <figcaption>Static environment: 65% success across 5 indoor locations.</figcaption>
+            <img src="static/images/real_static_env.png" alt="Sankey failure flow for the real robot in static environments." />
+            <figcaption>Real robot &mdash; static: 65.0% success.</figcaption>
           </figure>
         </div>
         <div class="results-col">
           <figure>
-            <img src="static/images/real_dynamic_env.png" alt="Real robot with dynamic obstacles" />
-            <figcaption>Dynamic environment with moving pedestrians: 55% success.</figcaption>
+            <img src="static/images/real_dynamic_env.png" alt="Sankey failure flow for the real robot with moving pedestrians." />
+            <figcaption>Real robot &mdash; dynamic: 55.0% success.</figcaption>
           </figure>
         </div>
       </div>
-
-      <!-- Failure Distribution -->
-      <h3 class="subsection-title">Spatial Failure Distribution</h3>
-      <figure class="full-width-figure">
-        <img src="static/images/success_distribution.png" alt="Spatial distribution of successes and failures across scenes" />
-        <figcaption>Spatial distribution of successes and failures. Failures cluster in deep table areas (reachability limits), wall-adjacent regions (constrained approach angles), and cluttered zones (precision requirements).</figcaption>
-      </figure>
+      <p class="figure-note">
+        The remaining gap to simulation came from noisy observations caused by synchronization between localization
+        and depth sensing, ground-plane filtering that occasionally removed low-lying points such as chair legs,
+        execution noise when the robot stuck on friction and then accelerated, and segmentation or detection errors
+        during grasping.
+      </p>
     </div>
   </section>
 
-  <!-- Diverse Demonstrations -->
-  <section class="section alt-bg" id="environments">
+  <!-- Discussion / limitations -->
+  <section class="section" id="discussion">
     <div class="container">
-      <h2>Evaluation Environments</h2>
-      <figure class="full-width-figure">
-        <img src="static/images/diverse_demonstrations.png" alt="Diverse evaluation environments in simulation and real world" />
-        <figcaption>
-          Our system is evaluated across diverse environments in both simulation (ReplicaCAD scenes) and real-world indoor locations.
-        </figcaption>
-      </figure>
-    </div>
-  </section>
-
-  <!-- Qualitative Results -->
-  <section class="section" id="qualitative">
-    <div class="container">
-      <h2>Qualitative Results</h2>
-      <div class="qual-grid">
-        <figure>
-          <img src="static/images/qualitative_init.jpg" alt="Initial configuration" />
-          <figcaption>Initial Configuration</figcaption>
-        </figure>
-        <figure>
-          <img src="static/images/qualitative_observation.jpg" alt="Active observation" />
-          <figcaption>Active Observation</figcaption>
-        </figure>
-        <figure>
-          <img src="static/images/qualitative_prepose.jpg" alt="Pre-grasp repositioning" />
-          <figcaption>Pre-Grasp Repositioning</figcaption>
-        </figure>
-        <figure>
-          <img src="static/images/qualitative_grasping.jpg" alt="Grasping pose" />
-          <figcaption>Grasping</figcaption>
-        </figure>
-      </div>
+      <h2>What the Failures Tell Us</h2>
+      <p class="section-lead">
+        Beyond per-module attribution, the residual failures point to three structural limitations in how perception
+        and planning are coupled &mdash; and to what a next system should do differently.
+      </p>
+      <ol class="limitation-list">
+        <li>
+          <span class="limitation-num" aria-hidden="true">1</span>
+          <div>
+            <h3>Observed free space has limited temporal validity</h3>
+            <p>
+              Velocity-aware gaze is effective <em>once an obstacle has entered the map</em>. The residual collisions
+              were cases where space verified as free was invalidated by obstacles arriving from adjacent unobserved
+              regions before the gaze revisited it. Active perception should anticipate <strong>where invalidation
+              can originate</strong> &mdash; for example, at occlusion boundaries near the planned route.
+            </p>
+          </div>
+        </li>
+        <li>
+          <span class="limitation-num" aria-hidden="true">2</span>
+          <div>
+            <h3>Reactive map maintenance retains stale evidence</h3>
+            <p>
+              The map clears freed space only along observed rays, so removing a point requires re-observing that
+              region. Every dynamic obstacle left residue: once the robot looked away, the obstacle departed but its
+              points persisted as floating obstacles, blocking valid paths and surfacing as planning failures.
+              Removing this class needs a <strong>predictive environment model</strong> that propagates dynamic
+              evidence forward and decays unconfirmed points while preserving occluded static obstacles.
+            </p>
+          </div>
+        </li>
+        <li>
+          <span class="limitation-num" aria-hidden="true">3</span>
+          <div>
+            <h3>Perception and planning are coupled in only one direction</h3>
+            <p>
+              The gaze policy conditions on the planned trajectory, but the motion policy optimizes collision cost in
+              the map without asking whether its swept volume <em>can</em> be observed. Observability is a property of
+              the trajectory itself &mdash; set by head reachability, self-occlusion, and motion direction, with
+              backward motion as the extreme case. <strong>Visibility should enter motion planning as a cost or
+              constraint.</strong>
+            </p>
+          </div>
+        </li>
+      </ol>
     </div>
   </section>
 
@@ -314,8 +558,13 @@
   <footer>
     <div class="container">
       <p>
-        Website template inspired by <a href="https://nerfies.github.io" target="_blank">Nerfies</a>.
-        Licensed under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank">CC BY-SA 4.0</a>.
+        The authors used OpenAI&rsquo;s ChatGPT and Codex to assist with code generation, idea formulation, and
+        manuscript text editing. The authors take full responsibility for the final manuscript, implementation,
+        analyses, and conclusions.
+      </p>
+      <p>
+        Website template inspired by <a href="https://nerfies.github.io" target="_blank" rel="noopener">Nerfies</a>.
+        Licensed under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>.
       </p>
     </div>
   </footer>
